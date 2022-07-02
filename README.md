@@ -8,4 +8,8 @@ With the Iterative Deepening A* algorithm, a version of the shortest-path A* alg
 
 It also doesn't use much memory and only needs to keep track of nodes visited in the current path since we know the starting and destination node. To make comparisons easy, we use a custom hash function that can bidirectionally translate permutaitons and integers.
 
-In this current version, we use the not-so-powerful manhattan distance as our heuristic. Thus, it takes 4 minutes to solve puzzles with a depth of 35 moves. 
+In this current version, we use the not-so-powerful manhattan distance as our heuristic. Thus, it takes 30 minutes to solve puzzles with a depth of ~45 moves. 
+
+Using walking distance (Ken’ichiro Takahashi) instead significantly speeds this up:
+ - http://www.ic-net.or.jp/home/takaken/nt/slide/solve15.html
+ - https://web.archive.org/web/20141224035932/http://juropollo.xe0.ru/stp_wd_translation_en.htm
