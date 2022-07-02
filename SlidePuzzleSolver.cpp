@@ -192,8 +192,8 @@ const int xd[4] = {1,0,-1,0}, yd[4] = {0,1,0,-1};
 mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
 
 
-const int SZ =16;
-const int SZ2 =4;
+const int SZ = 16;
+const int SZ2 = 4;
 int board[SZ];
 
 pi coord(int z){
@@ -210,6 +210,11 @@ int findBlank(){
     assert(false);
     return -1;
 }
+int findBlank(vi v){
+    For(i,SZ)if(v[i]==SZ-1)return i;
+    assert(false);
+    return -1;
+}
 bool moves(int dir){
     pi c1=coord(findBlank());
     pi c2={c1.f+xd[dir],c1.s+yd[dir]};
@@ -220,13 +225,17 @@ bool moves(int dir){
     return false;
 }
 void shuffle(){
-    For(i,1000){
+    For(i,3000){
         moves(rng()%4);
     }
 }
 void print(){
     For(i,SZ2){
-        For(j,SZ2)cout<<board[bkCoord({i,j})]<<" ";
+        For(j,SZ2){
+            if(board[bkCoord({i,j})]==15)cout<<0;
+            else cout<<board[bkCoord({i,j})]+1;
+            cout<<" ";
+        }
         cout<<endl;
     }
 }
@@ -240,6 +249,59 @@ int manhattanDist(){
         sum+=abs(c1.f-c2.f)+abs(c1.s-c2.s);
     }
     return sum;
+}
+
+struct VectorHasher {
+    int operator()(const vector<int> &V) const {
+        int hash = V.size();
+        for(auto &i : V) {
+            hash ^= i + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+        }
+        return hash;
+    }
+};
+
+unordered_map<vector<int>,int,VectorHasher> WD;
+
+void genWalk(){
+    //FAST and INDEPENDENT
+    queue<vector<int>> Q;
+    Q.push({4,0,0,0,0,4,0,0,0,0,4,0,0,0,0,3});
+    WD[{4,0,0,0,0,4,0,0,0,0,4,0,0,0,0,3}]=1;
+    while(sz(Q)){
+        auto x = Q.front(); Q.pop();
+        vi cnt(4,0);
+        For(i,16)cnt[i/4]+=x[i];
+        int rowBlank=-1;
+        For(i,4)if(cnt[i]==3)rowBlank=i;
+        For(i,4){//move tile to rowBlank
+            vi z={-4,4};
+            trav(z2,z){
+                vi x2;trav(tmp,x)x2.pb(tmp);
+                if(rowBlank*4+i+z2>=0 && rowBlank*4+i+z2<=15 && x2[rowBlank*4+i+z2]){
+                    x2[rowBlank*4+i]++;
+                    x2[rowBlank*4+i+z2]--;
+                    if(!WD[x2]){
+                        WD[x2]=WD[x]+1;
+                        Q.push(x2);
+                    }
+                }
+            }
+        }
+    }   
+    assert(sz(WD)==24964);
+}
+
+int walkingDist(){
+    vi cnt(16);
+    For(i,16){
+        int x=board[i];
+        if(x==15)continue;
+        int curRow=i/4;
+        int realRow=x/4;
+        cnt[curRow*4+realRow]++;
+    }
+    return WD[cnt];
 }
 
 ll fac[SZ+1];
@@ -282,13 +344,10 @@ bool isGoal(int x){
 }
 
 int search(int g, int bound){
-    // if(sz(path)%100000==0){
-    //     dbg(path);
-    // }
     ll node=path.bk;
-    int estim = g+manhattanDist();
-    if(estim>bound) return estim;
+    int estim = g+walkingDist();
     if(isGoal(node)) return -1;
+    if(estim>bound) return estim;
     int mn=MOD;//min of estimated cost out of subtrees
     For(i,4){
         bool revs = moves(i);
@@ -309,8 +368,9 @@ int search(int g, int bound){
     }
     return mn;
 }
+
 int ida_star(){
-    int bound=manhattanDist();
+    int bound=walkingDist();
     path.pb(permToInt());
     while(true){
         dbg(bound);
@@ -328,14 +388,20 @@ int ida_star(){
 
 void solve(){
     For(i,SZ)board[i]=i;//0-14 r #s, 15 is blank tile
+    vi v={0,1,2,15,4,5,6,7,8,9,10,11,12,13,14,3};
+    For(i,16)board[i]=v[i];
+    genWalk();
     shuffle();
     print();
     fac[0]=1;
     FOR(i,1,SZ+1)fac[i]=fac[i-1]*i;
-    dbg(manhattanDist());
-    ps(ida_star());
+
+    dbg("WALKING DIST", walkingDist());
+    ps("SHORTEST DIST:",ida_star());
     dbg(path);
-    dbg(dirs);
+    trav(x,dirs){
+        vs v={"S","E","N","W"};
+    }
 }
 
 int main() {
