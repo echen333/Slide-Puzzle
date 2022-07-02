@@ -195,6 +195,7 @@ mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
 const int SZ = 16;
 const int SZ2 = 4;
 int board[SZ];
+vi bWD(16);
 
 pi coord(int z){
     return {z/SZ2,z%SZ2};
@@ -219,6 +220,11 @@ bool moves(int dir){
     pi c1=coord(findBlank());
     pi c2={c1.f+xd[dir],c1.s+yd[dir]};
     if(in(c2)){
+        int realRow=board[bkCoord(c2)]/4;
+        int curRow=c2.f;
+        int gotoRow=c1.f;
+        bWD[curRow*4+realRow]--;
+        bWD[gotoRow*4+realRow]++;
         swap(board[bkCoord(c1)],board[bkCoord(c2)]);
         return true;
     }
@@ -301,6 +307,7 @@ int walkingDist(){
         int realRow=x/4;
         cnt[curRow*4+realRow]++;
     }
+    For(i,16)bWD[i]=cnt[i];
     return WD[cnt];
 }
 
@@ -345,7 +352,8 @@ bool isGoal(int x){
 
 int search(int g, int bound){
     ll node=path.bk;
-    int estim = g+walkingDist();
+    // int estim = g+walkingDist();
+    int estim = g+WD[bWD];
     if(isGoal(node)) return -1;
     if(estim>bound) return estim;
     int mn=MOD;//min of estimated cost out of subtrees
@@ -369,8 +377,10 @@ int search(int g, int bound){
     return mn;
 }
 
+int WALKING_DISTANCE = 0;
+
 int ida_star(){
-    int bound=walkingDist();
+    int bound=WALKING_DISTANCE;
     path.pb(permToInt());
     while(true){
         dbg(bound);
@@ -395,8 +405,8 @@ void solve(){
     print();
     fac[0]=1;
     FOR(i,1,SZ+1)fac[i]=fac[i-1]*i;
-
-    dbg("WALKING DIST", walkingDist());
+    WALKING_DISTANCE = walkingDist();
+    dbg("WALKING DIST", WALKING_DISTANCE);
     ps("SHORTEST DIST:",ida_star());
     dbg(path);
     trav(x,dirs){
